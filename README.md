@@ -1,35 +1,36 @@
 # Operations Efficiency Dashboard
 
-## Overview
-This repository contains a sample analytics workflow that demonstrates how to build an operations efficiency dashboard. It uses Python to generate a synthetic dataset mimicking operational metrics, calculates summary statistics, and visualizes key indicators in a bar chart. The goal is to showcase how data can be transformed into actionable insights for business decision-making.
+**Educational portfolio project — default data is synthetic, not real employer, airline, or machinery data.**
 
-## Features
-- **Synthetic data generation**: Creates a mock dataset with fields such as timestamp, process type, execution time, and status to simulate real-world operational logs.
-- **Data cleaning and summarization**: Cleans the data and computes aggregate metrics, including average execution time and process counts by type and status.
-- **Visualization**: Produces a bar chart illustrating average execution time per process type, which can be the foundation for an interactive dashboard.
-- **Reproducible**: All analysis lives in a single Python script (`operations_efficiency_dashboard.py`) and the generated image (`operations_delay_rate.png`).
+Aggregates validated daily machine logs into total operations, delay minutes, and delay minutes per 100 operations. Generates a CSV summary and bar chart.
 
-## Repository Structure
-- `operations_efficiency_dashboard.py`: Main script that generates synthetic data, processes it, and creates the visualization.
-- `operations_delay_rate.png`: Output image showing average execution time per process type.
+## Setup (Python 3.11+)
 
-## Technologies Used
-- Python 3 (Pandas, NumPy, Matplotlib)
-- Git and GitHub for version control and collaboration
+```bash
+python -m venv .venv
+# Windows: .venv\\Scripts\\activate
+# macOS/Linux: source .venv/bin/activate
+pip install -r requirements.txt
+python operations_efficiency_dashboard.py
+python -m unittest discover -v
+```
 
-## Getting Started
-1. **Clone the repository**:
-   git clone https://github.com/ray1131313131/operations-efficiency-dashboard.git
-   cd operations-efficiency-dashboard
-2. **Install dependencies**:
-   pip install pandas numpy matplotlib
-3. **Run the script**:
-   python operations_efficiency_dashboard.py
-   The script will generate the `operations_delay_rate.png` image in the project directory.
+The program writes generated artifacts under `outputs/` (ignored by Git). To analyze a local CSV instead, pass `--input your_file.csv`.
 
+CSV fields: `Date,Machine,Operations,DelayMinutes`. Read the input validation code before substituting your data. No company or customer information should be uploaded without permission.
 
-## Why This Project
-Operational efficiency is critical for any organization, and visualizing key metrics helps stakeholders identify bottlenecks and make informed decisions. This project demonstrates the fundamentals of data generation, analysis, and visualization in a compact, reproducible example.
+Required values cannot be missing, machine names cannot be blank, and dates must be valid. Operations must be positive and delay minutes nonnegative; both metrics must be finite numbers. Invalid rows cause an error before exports are written, instead of being silently omitted from totals.
 
-## License
-This project is released under the MIT License.
+## Technical approach
+
+Aggregates validated daily machine logs into total operations, delay minutes, and delay minutes per 100 operations. Generates a CSV summary and bar chart.
+
+The automated tests cover reproducibility and core validation/metrics. GitHub Actions runs the tests on pushes and pull requests.
+
+## Limits
+
+The generated figures and model scores demonstrate code behavior **only**. They are not real-world business improvements, production deployments, or evidence of predictive accuracy on actual organizations. More real-world validation, data quality checks, and monitoring are needed before deployment.
+
+## Portfolio talking points
+
+This project demonstrates Python data processing, an automated test suite, reproducible dependencies, and technical documentation. Be ready to walk through the source code yourself.
