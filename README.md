@@ -19,6 +19,8 @@ The program writes generated artifacts under `outputs/` (ignored by Git). To ana
 
 CSV fields: `Date,Machine,Operations,DelayMinutes`. Read the input validation code before substituting your data. No company or customer information should be uploaded without permission.
 
+Required values cannot be missing, machine names cannot be blank, and dates must be valid. Operations must be positive and delay minutes nonnegative; both metrics must be finite numbers. Invalid rows cause an error before exports are written, instead of being silently omitted from totals.
+
 ## Technical approach
 
 Aggregates validated daily machine logs into total operations, delay minutes, and delay minutes per 100 operations. Generates a CSV summary and bar chart.

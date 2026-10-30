@@ -22,9 +22,17 @@ def summarize(df):
     if missing:
         raise ValueError("Missing columns: " + ", ".join(sorted(missing)))
     data = df.copy()
+    if data[COLUMNS].isna().any().any():
+        raise ValueError("Required columns must not contain missing values")
+    if data["Machine"].astype(str).str.strip().eq("").any():
+        raise ValueError("Machine must not be blank")
     data["Date"] = pd.to_datetime(data["Date"], errors="raise")
+    if data["Date"].isna().any():
+        raise ValueError("Date must not be missing")
     for col in ("Operations", "DelayMinutes"):
         data[col] = pd.to_numeric(data[col], errors="raise")
+        if not np.isfinite(data[col]).all():
+            raise ValueError(f"{col} must contain only finite numbers")
     if data.empty or data["Operations"].le(0).any() or data["DelayMinutes"].lt(0).any():
         raise ValueError("Need rows with positive Operations and nonnegative DelayMinutes")
     result = data.groupby("Machine", as_index=False).agg(
