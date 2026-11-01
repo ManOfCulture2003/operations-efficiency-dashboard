@@ -23,6 +23,8 @@ Required values cannot be missing, machine names cannot be blank, and dates must
 
 ## Technical approach
 
+Input represents one daily total per machine. Duplicate machine/date pairs are rejected rather than counted twice; timestamps on the same calendar day count as the same date. Combine shift-level records into daily totals before importing.
+
 Aggregates validated daily machine logs into total operations, delay minutes, and delay minutes per 100 operations. Generates a CSV summary and bar chart.
 
 The automated tests cover reproducibility and core validation/metrics. GitHub Actions runs the tests on pushes and pull requests.

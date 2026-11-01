@@ -4,6 +4,19 @@ import pandas as pd
 from operations_efficiency_dashboard import generate_data, summarize
 
 class DashboardTests(unittest.TestCase):
+    def test_duplicate_machine_day_rejected(self):
+        for date in ("2025-01-01", "2025-01-01 12:00:00"):
+            with self.subTest(date=date):
+                data = generate_data(days=1)
+                extra = data.iloc[[0]].copy()
+                extra["Date"] = pd.to_datetime(date)
+                with self.assertRaisesRegex(ValueError, "one row per machine per day"):
+                    summarize(pd.concat([data, extra], ignore_index=True))
+
+    def test_different_days_and_machines_remain_valid(self):
+        result = summarize(generate_data(days=2))
+        self.assertEqual(len(result), 3)
+        self.assertTrue(result["days_recorded"].eq(2).all())
     def test_repeatability(self):
         pd.testing.assert_frame_equal(generate_data(),generate_data())
     def test_metric_units(self):

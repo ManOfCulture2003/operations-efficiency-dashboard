@@ -29,6 +29,9 @@ def summarize(df):
     data["Date"] = pd.to_datetime(data["Date"], errors="raise")
     if data["Date"].isna().any():
         raise ValueError("Date must not be missing")
+    data["Date"] = data["Date"].dt.normalize()
+    if data.duplicated(subset=["Machine", "Date"]).any():
+        raise ValueError("Expected one row per machine per day; combine daily records before importing")
     for col in ("Operations", "DelayMinutes"):
         data[col] = pd.to_numeric(data[col], errors="raise")
         if not np.isfinite(data[col]).all():
