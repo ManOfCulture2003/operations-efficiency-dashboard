@@ -88,3 +88,14 @@ def test_cli_smoke(tmp_path):
     result = subprocess.run([sys.executable, str(script), "--days", "2", "--output-dir", str(tmp_path)], capture_output=True, text=True)
     assert result.returncode == 0, result.stderr
     assert (tmp_path / "report.html").exists()
+
+
+@pytest.mark.parametrize("name", ["records.csv", "machine_kpis.csv", "daily_kpis.csv"])
+def test_report_cannot_overwrite_source_csv(tmp_path, name):
+    source = tmp_path / name
+    fixture_rows().to_csv(source, index=False)
+    original = source.read_bytes()
+    with pytest.raises(ValueError, match="overwrite.*input"):
+        build_report(input_path=source, output_dir=tmp_path, start="2026-01-02")
+    assert source.read_bytes() == original
+    assert sorted(path.name for path in tmp_path.iterdir()) == [name]

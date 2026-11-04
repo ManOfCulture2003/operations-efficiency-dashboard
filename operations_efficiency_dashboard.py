@@ -144,10 +144,15 @@ def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, da
     frame = filter_dates(validate_data(raw), start=start, end=end)
     by_machine = summarize(frame)
     by_day = summarize(frame, group_by="Date")
-    output_dir.mkdir(parents=True, exist_ok=True)
     paths = {name: output_dir / name for name in (
         "records.csv", "machine_kpis.csv", "daily_kpis.csv", "delay_incidence.png",
         "delay_minutes_per_operation.png", "report.html")}
+    if input_path is not None:
+        source = input_path.resolve()
+        if any(path.resolve() == source or (path.exists() and path.samefile(input_path))
+               for path in paths.values()):
+            raise ValueError("Report would overwrite the input file; choose a different output directory")
+    output_dir.mkdir(parents=True, exist_ok=True)
     frame.assign(Date=frame["Date"].dt.strftime("%Y-%m-%d")).to_csv(paths["records.csv"], index=False)
     by_machine.to_csv(paths["machine_kpis.csv"], index=False)
     by_day.assign(Date=by_day["Date"].dt.strftime("%Y-%m-%d")).to_csv(paths["daily_kpis.csv"], index=False)
