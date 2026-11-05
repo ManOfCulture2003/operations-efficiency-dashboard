@@ -55,6 +55,8 @@ def validate_data(frame: pd.DataFrame) -> pd.DataFrame:
     except (TypeError, ValueError) as exc:
         raise ValueError("Dates must be valid YYYY-MM-DD calendar dates") from exc
     for name in NUMERIC:
+        if result[name].map(lambda value: isinstance(value, (bool, np.bool_))).any():
+            raise ValueError(f"{name} must contain whole-number counts, not booleans")
         try:
             values = pd.to_numeric(result[name], errors="raise")
         except (TypeError, ValueError) as exc:

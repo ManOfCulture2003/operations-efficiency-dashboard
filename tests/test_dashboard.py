@@ -38,6 +38,15 @@ def test_zero_delays_has_no_fake_average():
     assert summary.loc[0, "DelayIncidencePct"] == 0
 
 
+@pytest.mark.parametrize('column', ['Operations', 'DelayedOperations', 'DelayMinutes'])
+@pytest.mark.parametrize('mixed', [False, True])
+def test_boolean_counts_rejected(column, mixed):
+    data = fixture_rows().assign(Operations=10, DelayedOperations=1, DelayMinutes=1)
+    data[column] = [True, 1, 1] if mixed else True
+    with pytest.raises(ValueError, match=column):
+        validate_data(data)
+
+
 @pytest.mark.parametrize("mutator", [
     lambda d: d.drop(columns=["DelayedOperations"]),
     lambda d: d.assign(Machine="=SUM(1,1)"),
