@@ -17,6 +17,7 @@ REQUIRED = ("Date", "Machine", "Operations", "DelayedOperations", "DelayMinutes"
 NUMERIC = ("Operations", "DelayedOperations", "DelayMinutes")
 MACHINE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$")
 MAX_ROWS = 100_000
+MAX_CSV_BYTES = 20 * 1024 * 1024  # Bound input bytes before pandas parsing.
 
 
 def generate_data(*, seed: int = 0, days: int = 90) -> pd.DataFrame:
@@ -141,7 +142,9 @@ def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, da
     if synthetic:
         raw = generate_data(seed=seed, days=days)
     else:
-        # Limit memory exposure from unexpectedly large CSVs.
+        # A row limit alone cannot bound memory when CSV fields are enormous.
+        if input_path.stat().st_size > MAX_CSV_BYTES:
+            raise ValueError(f"Input CSV exceeds the {MAX_CSV_BYTES // (1024 * 1024)} MiB file-size limit")
         raw = pd.read_csv(input_path, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
     frame = filter_dates(validate_data(raw), start=start, end=end)
     by_machine = summarize(frame)
