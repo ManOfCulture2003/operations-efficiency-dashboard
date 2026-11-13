@@ -43,7 +43,7 @@ Required columns (one record per date and machine):
 - `Operations`: positive whole number.
 - `DelayedOperations`: whole number between 0 and `Operations`.
 - `DelayMinutes`: nonnegative whole minutes; must be zero if `DelayedOperations` is zero.
-- Limit: 100,000 records per run. CSV contents are processed locally and not sent anywhere.
+- Limits: 100,000 records and 20 MiB per input CSV. Oversized files are rejected before parsing; no report is written. CSV contents are processed locally and not sent anywhere.
 
 ### KPI definitions
 
