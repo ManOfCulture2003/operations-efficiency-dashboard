@@ -16,6 +16,27 @@ def fixture_rows():
     ])
 
 
+@pytest.mark.parametrize('machine', ['NA', 'NULL', 'NaN', 'None'])
+def test_csv_preserves_valid_machine_names(tmp_path, machine):
+    source = tmp_path / 'input.csv'
+    source.write_text(f'Date,Machine,Operations,DelayedOperations,DelayMinutes\n2026-01-01,{machine},100,10,50\n')
+    paths = build_report(input_path=source, output_dir=tmp_path / 'report')
+    rows = pd.read_csv(paths['records.csv'], keep_default_na=False)
+    assert rows['Machine'].tolist() == [machine]
+
+
+@pytest.mark.parametrize('missing', ['Machine', 'Operations', 'Date'])
+def test_csv_missing_required_value_still_rejected(tmp_path, missing):
+    row = {'Date': '2026-01-01', 'Machine': 'NA', 'Operations': 100,
+           'DelayedOperations': 10, 'DelayMinutes': 50}
+    row[missing] = ''
+    source = tmp_path / 'input.csv'
+    pd.DataFrame([row]).to_csv(source, index=False)
+    with pytest.raises(ValueError):
+        build_report(input_path=source, output_dir=tmp_path / 'report')
+    assert not (tmp_path / 'report').exists()
+
+
 def test_generation_is_deterministic_and_synthetic():
     assert generate_data(seed=7, days=3).equals(generate_data(seed=7, days=3))
     assert not generate_data(seed=7, days=3).equals(generate_data(seed=8, days=3))

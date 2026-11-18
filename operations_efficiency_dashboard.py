@@ -145,7 +145,9 @@ def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, da
         # A row limit alone cannot bound memory when CSV fields are enormous.
         if input_path.stat().st_size > MAX_CSV_BYTES:
             raise ValueError(f"Input CSV exceeds the {MAX_CSV_BYTES // (1024 * 1024)} MiB file-size limit")
-        raw = pd.read_csv(input_path, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
+        # Machine identifiers such as NA and NULL are valid names, not missing data.
+        # Explicit validation below still rejects empty required fields.
+        raw = pd.read_csv(input_path, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str}, keep_default_na=False)
     frame = filter_dates(validate_data(raw), start=start, end=end)
     by_machine = summarize(frame)
     by_day = summarize(frame, group_by="Date")
