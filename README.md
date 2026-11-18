@@ -79,3 +79,5 @@ GitHub Actions runs tests and generates a smoke-test report on Ubuntu and Window
 ## License
 
 MIT. The original repository README stated an MIT license, but the repository has no `LICENSE` file yet; verify license ownership before distributing third-party contributions.
+
+CSV machine names such as NA, NULL, NaN and None are treated as literal identifiers. Empty required fields are still rejected before a report is written.
