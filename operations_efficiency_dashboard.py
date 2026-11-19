@@ -145,6 +145,11 @@ def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, da
         # A row limit alone cannot bound memory when CSV fields are enormous.
         if input_path.stat().st_size > MAX_CSV_BYTES:
             raise ValueError(f"Input CSV exceeds the {MAX_CSV_BYTES // (1024 * 1024)} MiB file-size limit")
+        # Read original names before pandas silently renames duplicate headers.
+        header = pd.read_csv(input_path, header=None, nrows=1, dtype=str,
+                             keep_default_na=False).iloc[0].tolist()
+        if len(header) != len(set(header)):
+            raise ValueError("Duplicate CSV column names are not allowed; give each column a unique name")
         raw = pd.read_csv(input_path, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
     frame = filter_dates(validate_data(raw), start=start, end=end)
     by_machine = summarize(frame)
