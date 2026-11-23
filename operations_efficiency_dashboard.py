@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 from datetime import date
 from html import escape
+from io import StringIO
 from pathlib import Path
 import re
 
@@ -145,7 +146,15 @@ def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, da
         # A row limit alone cannot bound memory when CSV fields are enormous.
         if input_path.stat().st_size > MAX_CSV_BYTES:
             raise ValueError(f"Input CSV exceeds the {MAX_CSV_BYTES // (1024 * 1024)} MiB file-size limit")
-        raw = pd.read_csv(input_path, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
+        with input_path.open("rb") as source:
+            payload = source.read(MAX_CSV_BYTES + 1)
+        if len(payload) > MAX_CSV_BYTES:
+            raise ValueError("Input CSV exceeds the file-size limit")
+        try:
+            text = payload.decode("utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("Input must be a plain UTF-8 CSV; extract compressed files first") from exc
+        raw = pd.read_csv(StringIO(text), nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
     frame = filter_dates(validate_data(raw), start=start, end=end)
     by_machine = summarize(frame)
     by_day = summarize(frame, group_by="Date")

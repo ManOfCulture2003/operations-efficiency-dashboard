@@ -44,6 +44,7 @@ Required columns (one record per date and machine):
 - `DelayedOperations`: whole number between 0 and `Operations`.
 - `DelayMinutes`: nonnegative whole minutes; must be zero if `DelayedOperations` is zero.
 - Limits: 100,000 records and 20 MiB per input CSV. Oversized files are rejected before parsing; no report is written. CSV contents are processed locally and not sent anywhere.
+- Use a plain UTF-8 CSV (a UTF-8 BOM is fine). Compressed files are not expanded automatically: extract them first so the size limit applies to the actual CSV bytes. The reader also checks bytes read, in case the file grows after the initial size check.
 
 ### KPI definitions
 
