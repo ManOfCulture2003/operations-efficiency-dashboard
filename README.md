@@ -55,6 +55,8 @@ Required columns (one record per date and machine):
 
 All summaries use **total numerators and denominators**, not the unweighted average of daily ratios. Delays are synthetic in demo mode; no causal inference, productivity improvements, or accuracy claims are made.
 
+The machine CSV and HTML report also show calendar-day coverage. `RecordedDays` counts distinct dates per machine; `CalendarDays` spans the first through last selected records across all machines; `UnrecordedDays` is their difference. This exposes uneven reporting without inserting zero operations for missing dates. It is not an uptime measure: weekends, holidays, or days before a machine started reporting may be unrecorded. Date filters are applied before calculating coverage; requested dates outside the available records do not extend the span.
+
 ## Output files
 
 `reports/report.html` (offline dashboard), `records.csv` (validated selected rows), `machine_kpis.csv`, `daily_kpis.csv`, `delay_incidence.png`, `delay_minutes_per_operation.png`. Legacy `operations_delay_rate.png` in the repository predates this update and should not be treated as the new report output.

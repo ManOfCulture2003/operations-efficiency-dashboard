@@ -106,6 +106,12 @@ def summarize(frame: pd.DataFrame, group_by: str = "Machine") -> pd.DataFrame:
     if group_by not in ("Machine", "Date"):
         raise ValueError("group_by must be Machine or Date")
     summary = frame.groupby(group_by, as_index=False, sort=True)[list(NUMERIC)].sum()
+    if group_by == "Machine":
+        recorded = frame.groupby("Machine")["Date"].nunique()
+        calendar_days = (frame["Date"].max() - frame["Date"].min()).days + 1
+        summary["RecordedDays"] = summary["Machine"].map(recorded)
+        summary["CalendarDays"] = calendar_days
+        summary["UnrecordedDays"] = calendar_days - summary["RecordedDays"]
     summary["DelayIncidencePct"] = (100 * summary["DelayedOperations"] / summary["Operations"]).round(2)
     summary["DelayMinutesPerOperation"] = (summary["DelayMinutes"] / summary["Operations"]).round(3)
     summary["MinutesPerDelayedOperation"] = (
@@ -129,12 +135,12 @@ def save_chart(summary: pd.DataFrame, path: Path, metric: str, label: str) -> No
 def make_html(summary: pd.DataFrame, *, synthetic: bool, start: str, end: str) -> str:
     rows = "\n".join(
         "<tr>" + "".join(f"<td>{escape(str(value))}</td>" for value in row) + "</tr>"
-        for row in summary[["Machine", "Operations", "DelayedOperations", "DelayMinutes", "DelayIncidencePct", "DelayMinutesPerOperation"]].itertuples(index=False, name=None)
+        for row in summary[["Machine", "Operations", "DelayedOperations", "DelayMinutes", "DelayIncidencePct", "DelayMinutesPerOperation", "RecordedDays", "UnrecordedDays"]].itertuples(index=False, name=None)
     )
     source = "SYNTHETIC DEMONSTRATION DATA — NOT REAL BUSINESS PERFORMANCE" if synthetic else "USER-SUPPLIED LOCAL DATA — VERIFY BEFORE SHARING"
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Operations Efficiency Report</title><style>
 body{{font:16px system-ui,sans-serif;max-width:1000px;margin:2rem auto;padding:0 1rem;color:#172334;background:#f8fafc}}header{{background:#172334;color:white;padding:1.5rem;border-radius:12px}}.note{{font-weight:700;color:#8b3d0a;background:#fff3db;padding:1rem;border-radius:8px;margin:1rem 0}}table{{border-collapse:collapse;width:100%;background:white}}th,td{{padding:.7rem;text-align:left;border-bottom:1px solid #dbe2e8}}th{{background:#e8eef5}}.scroll{{overflow-x:auto}}img{{max-width:100%;height:auto;background:white;border-radius:8px;margin:1rem 0}}footer{{margin:2rem 0;color:#475569}}@media print{{body{{background:white}}}}
-</style></head><body><header><h1>Operations Efficiency Report</h1><p>{escape(start)} through {escape(end)} · Inclusive</p></header><p class="note">{escape(source)}</p><h2>Machine KPIs</h2><div class="scroll"><table><thead><tr><th>Machine</th><th>Operations</th><th>Delayed operations</th><th>Delay minutes</th><th>Delayed (%)</th><th>Minutes / operation</th></tr></thead><tbody>{rows}</tbody></table></div><h2>Delay incidence</h2><img src="delay_incidence.png" alt="Bar chart of percent of operations delayed by machine"><h2>Delay duration</h2><img src="delay_minutes_per_operation.png" alt="Bar chart of delay minutes per operation by machine"><footer>Delayed (%) = 100 × delayed operations / total operations. Minutes / operation = total delay minutes / total operations. These are different KPIs; neither is a causal explanation.</footer></body></html>"""
+</style></head><body><header><h1>Operations Efficiency Report</h1><p>{escape(start)} through {escape(end)} · Inclusive</p></header><p class="note">{escape(source)}</p><h2>Machine KPIs</h2><div class="scroll"><table><thead><tr><th>Machine</th><th>Operations</th><th>Delayed operations</th><th>Delay minutes</th><th>Delayed (%)</th><th>Minutes / operation</th><th>Recorded days</th><th>Unrecorded days</th></tr></thead><tbody>{rows}</tbody></table></div><h2>Delay incidence</h2><img src="delay_incidence.png" alt="Bar chart of percent of operations delayed by machine"><h2>Delay duration</h2><img src="delay_minutes_per_operation.png" alt="Bar chart of delay minutes per operation by machine"><footer>Coverage counts calendar days between the first and last selected records. Unrecorded days are not proof of downtime; weekends and non-operating days may have no records. Missing days are not filled with zeroes.<br>Delayed (%) = 100 × delayed operations / total operations. Minutes / operation = total delay minutes / total operations. These are different KPIs; neither is a causal explanation.</footer></body></html>"""
 
 
 def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, days: int = 90, start: str | None = None, end: str | None = None) -> dict[str, Path]:
