@@ -116,14 +116,16 @@ def summarize(frame: pd.DataFrame, group_by: str = "Machine") -> pd.DataFrame:
 
 def save_chart(summary: pd.DataFrame, path: Path, metric: str, label: str) -> None:
     fig, ax = plt.subplots(figsize=(8, 4.5))
-    ax.bar(summary["Machine"], summary[metric])
-    ax.set_ylabel(label)
-    ax.set_xlabel("Machine")
-    ax.set_title(label + " by machine")
-    ax.grid(axis="y", alpha=0.25)
-    fig.tight_layout()
-    fig.savefig(path, dpi=140)
-    plt.close(fig)
+    try:
+        ax.bar(summary["Machine"], summary[metric])
+        ax.set_ylabel(label)
+        ax.set_xlabel("Machine")
+        ax.set_title(label + " by machine")
+        ax.grid(axis="y", alpha=0.25)
+        fig.tight_layout()
+        fig.savefig(path, dpi=140)
+    finally:
+        plt.close(fig)
 
 
 def make_html(summary: pd.DataFrame, *, synthetic: bool, start: str, end: str) -> str:
