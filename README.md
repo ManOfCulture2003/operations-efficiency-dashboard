@@ -44,7 +44,7 @@ Required columns (one record per date and machine):
 - `DelayedOperations`: whole number between 0 and `Operations`.
 - `DelayMinutes`: nonnegative whole minutes; must be zero if `DelayedOperations` is zero.
 - Limits: 100,000 records and 20 MiB per input CSV. Oversized files are rejected before parsing; no report is written. CSV contents are processed locally and not sent anywhere.
-- Use a plain UTF-8 CSV (a UTF-8 BOM is fine). Compressed files are not expanded automatically: extract them first so the size limit applies to the actual CSV bytes. The reader also checks bytes read, in case the file grows after the initial size check.
+- Supply plain UTF-8 CSV (with or without a BOM), not compressed files. Header validation and parsing use the same bounded snapshot. Duplicate headers, malformed quoting, and rows with extra or missing cells are rejected. Blank lines and properly quoted commas are supported. Machine names such as `NA` and `NULL` stay literal names; empty required values still fail validation. The CSV parser also enforces its field-size safety limit.
 
 ### KPI definitions
 
