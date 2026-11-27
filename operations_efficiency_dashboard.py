@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import argparse
+import csv
+from io import StringIO
 from datetime import date
 from html import escape
 from pathlib import Path
@@ -18,6 +20,37 @@ NUMERIC = ("Operations", "DelayedOperations", "DelayMinutes")
 MACHINE_PATTERN = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,39}$")
 MAX_ROWS = 100_000
 MAX_CSV_BYTES = 20 * 1024 * 1024  # Bound input bytes before pandas parsing.
+
+
+def read_csv_snapshot(path):
+    """Validate and parse the same bounded UTF-8 CSV snapshot."""
+    maximum = MAX_CSV_BYTES
+    with path.open("rb") as source:
+        payload = source.read(maximum + 1)
+    if len(payload) > maximum:
+        raise ValueError(f"Input CSV exceeds the {maximum // (1024 * 1024)} MiB file-size limit")
+    try:
+        text = payload.decode("utf-8-sig")
+    except UnicodeDecodeError as exc:
+        raise ValueError("Input must be a plain UTF-8 CSV; extract compressed files first") from exc
+    if "\x00" in text:
+        raise ValueError("Input CSV contains a null byte; remove binary or corrupted content before importing")
+    header = None
+    try:
+        for row in csv.reader(StringIO(text), strict=True):
+            if not row or (len(row) == 1 and not row[0].strip()):
+                continue
+            if header is None:
+                header = row
+                if len(header) != len(set(header)):
+                    raise ValueError("CSV contains duplicate column names")
+            elif len(row) != len(header):
+                raise ValueError("CSV row width does not match the header")
+    except csv.Error as exc:
+        raise ValueError(f"Malformed CSV: {exc}") from exc
+    if header is None:
+        raise ValueError("Input CSV contains no header")
+    return pd.read_csv(StringIO(text), keep_default_na=False, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
 
 
 def generate_data(*, seed: int = 0, days: int = 90) -> pd.DataFrame:
@@ -145,7 +178,7 @@ def build_report(*, input_path: Path | None, output_dir: Path, seed: int = 0, da
         # A row limit alone cannot bound memory when CSV fields are enormous.
         if input_path.stat().st_size > MAX_CSV_BYTES:
             raise ValueError(f"Input CSV exceeds the {MAX_CSV_BYTES // (1024 * 1024)} MiB file-size limit")
-        raw = pd.read_csv(input_path, nrows=MAX_ROWS + 1, dtype={"Date": str, "Machine": str})
+        raw = read_csv_snapshot(input_path)
     frame = filter_dates(validate_data(raw), start=start, end=end)
     by_machine = summarize(frame)
     by_day = summarize(frame, group_by="Date")
