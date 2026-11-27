@@ -33,6 +33,8 @@ def read_csv_snapshot(path):
         text = payload.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("Input must be a plain UTF-8 CSV; extract compressed files first") from exc
+    if "\x00" in text:
+        raise ValueError("Input CSV contains a null byte; remove binary or corrupted content before importing")
     header = None
     try:
         for row in csv.reader(StringIO(text), strict=True):
